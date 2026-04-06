@@ -77,21 +77,19 @@ export const initializeSearchComponent = ({
   const updateOpenState = (nextOpen: boolean): void => {
     state.isOpen = nextOpen;
 
+    if (!nextOpen) {
+      state.activeIndex = -1;
+      state.currentView = 'results';
+      updateActiveDescendant();
+    }
+
     const isMobileOpen = nextOpen && elements.mobileMediaQuery.matches;
 
     elements.shell.classList.toggle(searchStateClasses.open, nextOpen);
     elements.shell.classList.toggle(searchStateClasses.mobileOpen, isMobileOpen);
     document.body.classList.toggle(searchStateClasses.bodyLocked, isMobileOpen);
-
     elements.input.setAttribute('aria-expanded', String(nextOpen));
     syncPanels();
-
-    if (!nextOpen) {
-      state.activeIndex = -1;
-      state.currentView = 'results';
-      updateActiveDescendant();
-      syncPanels();
-    }
   };
 
   const setActiveIndex = (nextIndex: number): void => {
@@ -170,6 +168,9 @@ export const initializeSearchComponent = ({
     updateActiveDescendant();
   };
 
+  const getOptionFromEvent = (event: Event): HTMLElement | null =>
+    (event.target as HTMLElement).closest<HTMLElement>('[data-index]');
+
   const selectItem = (index: number): void => {
     const selectedItem = state.filteredItems[index];
 
@@ -196,6 +197,118 @@ export const initializeSearchComponent = ({
     updateActiveDescendant();
   };
 
+  const handleInputFocus = (): void => {
+    renderList();
+    openResults();
+  };
+
+  const handleInputValueChange = (inputEvent: Event): void => {
+    const inputElement = inputEvent.target as HTMLInputElement;
+
+    renderList(inputElement.value);
+    openResults();
+  };
+
+  const handleInputKeydown = (keyboardEvent: KeyboardEvent): void => {
+    switch (keyboardEvent.key) {
+      case 'ArrowDown':
+        keyboardEvent.preventDefault();
+        moveActiveIndex(1);
+        break;
+      case 'ArrowUp':
+        keyboardEvent.preventDefault();
+        moveActiveIndex(-1);
+        break;
+      case 'Enter':
+        if (state.isOpen && state.activeIndex >= 0) {
+          keyboardEvent.preventDefault();
+          selectItem(state.activeIndex);
+        }
+        break;
+      case 'Escape':
+        if (state.isOpen) {
+          keyboardEvent.preventDefault();
+          closeResults({ restoreFocus: true });
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleListClick = (mouseEvent: MouseEvent): void => {
+    const optionElement = getOptionFromEvent(mouseEvent);
+
+    if (!optionElement) {
+      return;
+    }
+
+    const optionIndex = Number(optionElement.dataset.index);
+    setActiveIndex(optionIndex);
+    selectItem(optionIndex);
+  };
+
+  const handleListMouseOver = (mouseEvent: MouseEvent): void => {
+    const optionElement = getOptionFromEvent(mouseEvent);
+
+    if (!optionElement) {
+      return;
+    }
+
+    setActiveIndex(Number(optionElement.dataset.index));
+  };
+
+  const handleShellFocusOut = (focusEvent: FocusEvent): void => {
+    const nextFocusedElement = focusEvent.relatedTarget as Node | null;
+
+    if (nextFocusedElement && elements.shell.contains(nextFocusedElement)) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      const activeElement = document.activeElement;
+
+      if (activeElement instanceof Node && elements.shell.contains(activeElement)) {
+        return;
+      }
+
+      closeResults();
+    }, 0);
+  };
+
+  const handleDocumentClick = (mouseEvent: MouseEvent): void => {
+    const clickTarget = mouseEvent.target as Node;
+
+    if (!state.isOpen || elements.shell.contains(clickTarget)) {
+      return;
+    }
+
+    closeResults();
+  };
+
+  const bindInputEvents = (): void => {
+    elements.input.addEventListener('focus', handleInputFocus);
+    elements.input.addEventListener('input', handleInputValueChange);
+    elements.input.addEventListener('keydown', handleInputKeydown);
+  };
+
+  const bindListEvents = (): void => {
+    elements.list.addEventListener('click', handleListClick);
+    elements.list.addEventListener('mouseover', handleListMouseOver);
+  };
+
+  const bindCloseEvents = (): void => {
+    elements.closeTriggers.forEach((triggerElement) => {
+      triggerElement.addEventListener('click', () => {
+        closeResults();
+        elements.input.blur();
+      });
+    });
+
+    elements.shell.addEventListener('focusout', handleShellFocusOut);
+    document.addEventListener('click', handleDocumentClick);
+  };
+
   elements.form.addEventListener('submit', (event) => {
     event.preventDefault();
 
@@ -207,17 +320,7 @@ export const initializeSearchComponent = ({
     openResults();
   });
 
-  elements.input.addEventListener('focus', () => {
-    renderList();
-    openResults();
-  });
-
-  elements.input.addEventListener('input', (event) => {
-    const target = event.target as HTMLInputElement;
-
-    renderList(target.value);
-    openResults();
-  });
+  bindInputEvents();
 
   elements.clearButton.addEventListener('click', () => {
     if (!elements.input.value) {
@@ -231,56 +334,7 @@ export const initializeSearchComponent = ({
     elements.input.focus();
   });
 
-  elements.input.addEventListener('keydown', (event) => {
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        moveActiveIndex(1);
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        moveActiveIndex(-1);
-        break;
-      case 'Enter':
-        if (state.isOpen && state.activeIndex >= 0) {
-          event.preventDefault();
-          selectItem(state.activeIndex);
-        }
-        break;
-      case 'Escape':
-        if (state.isOpen) {
-          event.preventDefault();
-          closeResults({ restoreFocus: true });
-        }
-        break;
-      default:
-        break;
-    }
-  });
-
-  elements.list.addEventListener('pointerdown', (event) => {
-    const option = (event.target as HTMLElement).closest<HTMLElement>('[data-index]');
-
-    if (!option) {
-      return;
-    }
-
-    event.preventDefault();
-
-    const optionIndex = Number(option.dataset.index);
-    setActiveIndex(optionIndex);
-    selectItem(optionIndex);
-  });
-
-  elements.list.addEventListener('pointermove', (event) => {
-    const option = (event.target as HTMLElement).closest<HTMLElement>('[data-index]');
-
-    if (!option) {
-      return;
-    }
-
-    setActiveIndex(Number(option.dataset.index));
-  });
+  bindListEvents();
 
   setupAddItemFlow({
     elements,
@@ -305,40 +359,7 @@ export const initializeSearchComponent = ({
 
   syncClearButtonState();
 
-  elements.closeTriggers.forEach((trigger) => {
-    trigger.addEventListener('click', () => {
-      closeResults();
-      elements.input.blur();
-    });
-  });
-
-  elements.shell.addEventListener('focusout', (event) => {
-    const nextFocusedElement = event.relatedTarget as Node | null;
-
-    if (nextFocusedElement && elements.shell.contains(nextFocusedElement)) {
-      return;
-    }
-
-    window.setTimeout(() => {
-      const activeElement = document.activeElement;
-
-      if (activeElement instanceof Node && elements.shell.contains(activeElement)) {
-        return;
-      }
-
-      closeResults();
-    }, 0);
-  });
-
-  document.addEventListener('pointerdown', (event) => {
-    const target = event.target as Node;
-
-    if (!state.isOpen || elements.shell.contains(target)) {
-      return;
-    }
-
-    closeResults();
-  });
+  bindCloseEvents();
 
   elements.mobileMediaQuery.addEventListener('change', () => {
     if (state.isOpen) {

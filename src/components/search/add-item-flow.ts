@@ -23,6 +23,13 @@ interface AddItemFlowDependencies {
   renderList: (query?: string) => void;
 }
 
+interface AddItemFormControls {
+  form: HTMLFormElement;
+  titleInput: HTMLInputElement;
+  artistInput: HTMLInputElement;
+  feedback: HTMLElement;
+}
+
 const invalidInputClassName = 'search__input--invalid';
 
 const showFeedback = (
@@ -64,20 +71,30 @@ export const setupAddItemFlow = ({
   setItems,
   renderList
 }: AddItemFlowDependencies): void => {
-  const resetAddItemForms = (): void => {
-    elements.addItemMobileForm.reset();
-    elements.addItemDialogForm.reset();
+  const mobileFormControls: AddItemFormControls = {
+    form: elements.addItemMobileForm,
+    titleInput: elements.addItemMobileInput,
+    artistInput: elements.addItemMobileArtistInput,
+    feedback: elements.addItemMobileFeedback
+  };
 
-    clearFeedback(
-      elements.addItemMobileFeedback,
-      elements.addItemMobileInput,
-      elements.addItemMobileArtistInput
-    );
-    clearFeedback(
-      elements.addItemDialogFeedback,
-      elements.addItemDialogInput,
-      elements.addItemDialogArtistInput
-    );
+  const dialogFormControls: AddItemFormControls = {
+    form: elements.addItemDialogForm,
+    titleInput: elements.addItemDialogInput,
+    artistInput: elements.addItemDialogArtistInput,
+    feedback: elements.addItemDialogFeedback
+  };
+
+  const clearFormFeedback = ({ feedback, titleInput, artistInput }: AddItemFormControls): void => {
+    clearFeedback(feedback, titleInput, artistInput);
+  };
+
+  const resetAddItemForms = (): void => {
+    mobileFormControls.form.reset();
+    dialogFormControls.form.reset();
+
+    clearFormFeedback(mobileFormControls);
+    clearFormFeedback(dialogFormControls);
   };
 
   const commitNewItem = (
@@ -130,27 +147,19 @@ export const setupAddItemFlow = ({
     if (elements.mobileMediaQuery.matches) {
       setCurrentView('add-item');
       syncPanels();
-      elements.addItemMobileInput.value = initialTitle;
-      elements.addItemMobileArtistInput.value = '';
-      clearFeedback(
-        elements.addItemMobileFeedback,
-        elements.addItemMobileInput,
-        elements.addItemMobileArtistInput
-      );
-      elements.addItemMobileInput.focus();
+      mobileFormControls.titleInput.value = initialTitle;
+      mobileFormControls.artistInput.value = '';
+      clearFormFeedback(mobileFormControls);
+      mobileFormControls.titleInput.focus();
       return;
     }
 
     closeResults();
-    elements.addItemDialogInput.value = initialTitle;
-    elements.addItemDialogArtistInput.value = '';
-    clearFeedback(
-      elements.addItemDialogFeedback,
-      elements.addItemDialogInput,
-      elements.addItemDialogArtistInput
-    );
+    dialogFormControls.titleInput.value = initialTitle;
+    dialogFormControls.artistInput.value = '';
+    clearFormFeedback(dialogFormControls);
     elements.addItemDialog.showModal();
-    elements.addItemDialogInput.focus();
+    dialogFormControls.titleInput.focus();
   };
 
   const showResultsStep = ({ focusInput = false } = {}): void => {
@@ -170,27 +179,27 @@ export const setupAddItemFlow = ({
     showResultsStep({ focusInput: true });
   });
 
-  elements.addItemMobileForm.addEventListener('submit', (event) => {
-    event.preventDefault();
+  elements.addItemMobileForm.addEventListener('submit', (submitEvent) => {
+    submitEvent.preventDefault();
 
     commitNewItem(
-      elements.addItemMobileInput.value,
-      elements.addItemMobileArtistInput.value,
-      elements.addItemMobileFeedback,
-      elements.addItemMobileInput,
-      elements.addItemMobileArtistInput
+      mobileFormControls.titleInput.value,
+      mobileFormControls.artistInput.value,
+      mobileFormControls.feedback,
+      mobileFormControls.titleInput,
+      mobileFormControls.artistInput
     );
   });
 
-  elements.addItemDialogForm.addEventListener('submit', (event) => {
-    event.preventDefault();
+  elements.addItemDialogForm.addEventListener('submit', (submitEvent) => {
+    submitEvent.preventDefault();
 
     const success = commitNewItem(
-      elements.addItemDialogInput.value,
-      elements.addItemDialogArtistInput.value,
-      elements.addItemDialogFeedback,
-      elements.addItemDialogInput,
-      elements.addItemDialogArtistInput
+      dialogFormControls.titleInput.value,
+      dialogFormControls.artistInput.value,
+      dialogFormControls.feedback,
+      dialogFormControls.titleInput,
+      dialogFormControls.artistInput
     );
 
     if (success) {

@@ -31,55 +31,43 @@ export const searchStateClasses = {
   bodyLocked: 'has-search-overlay'
 } as const satisfies Record<string, string>;
 
+const requireElement = <ElementType extends Element>(
+  selector: string,
+  elementName: string
+): ElementType => {
+  const element = document.querySelector<ElementType>(selector);
+
+  if (!element) {
+    throw new Error(`Vereist element ontbreekt: ${elementName} (${selector}).`);
+  }
+
+  return element;
+};
+
 export const getSearchElements = (): SearchElements => {
-  const shell = document.querySelector<HTMLElement>('#search-shell');
-  const form = document.querySelector<HTMLFormElement>('#search-form');
-  const input = document.querySelector<HTMLInputElement>('#search-input');
-  const clearButton = document.querySelector<HTMLButtonElement>('#search-clear');
-  const panel = document.querySelector<HTMLElement>('#results-panel');
-  const mobileStepPanel = document.querySelector<HTMLElement>('#add-item-mobile-panel');
-  const list = document.querySelector<HTMLUListElement>('#results');
-  const status = document.querySelector<HTMLElement>('#results-status');
-  const addItemAction = document.querySelector<HTMLButtonElement>('#add-item-action');
-  const addItemBackButton = document.querySelector<HTMLButtonElement>('#add-item-back');
-  const addItemMobileForm = document.querySelector<HTMLFormElement>('#add-item-mobile-form');
-  const addItemMobileInput = document.querySelector<HTMLInputElement>('#add-item-mobile-input');
-  const addItemMobileArtistInput = document.querySelector<HTMLInputElement>('#add-item-mobile-artist-input');
-  const addItemMobileFeedback = document.querySelector<HTMLElement>('#add-item-mobile-feedback');
-  const addItemDialog = document.querySelector<HTMLDialogElement>('#add-item-dialog');
-  const addItemDialogForm = document.querySelector<HTMLFormElement>('#add-item-dialog-form');
-  const addItemDialogInput = document.querySelector<HTMLInputElement>('#add-item-dialog-input');
-  const addItemDialogArtistInput = document.querySelector<HTMLInputElement>('#add-item-dialog-artist-input');
-  const addItemDialogFeedback = document.querySelector<HTMLElement>('#add-item-dialog-feedback');
-  const addItemDialogCancel = document.querySelector<HTMLButtonElement>('#add-item-dialog-cancel');
+  const shell = requireElement<HTMLElement>('#search-shell', 'Search shell');
+  const form = requireElement<HTMLFormElement>('#search-form', 'Search form');
+  const input = requireElement<HTMLInputElement>('#search-input', 'Search input');
+  const clearButton = requireElement<HTMLButtonElement>('#search-clear', 'Search clear button');
+  const panel = requireElement<HTMLElement>('#results-panel', 'Results panel');
+  const mobileStepPanel = requireElement<HTMLElement>('#add-item-mobile-panel', 'Mobile add-item panel');
+  const list = requireElement<HTMLUListElement>('#results', 'Results list');
+  const status = requireElement<HTMLElement>('#results-status', 'Results status');
+  const addItemAction = requireElement<HTMLButtonElement>('#add-item-action', 'Add-item action button');
+  const addItemBackButton = requireElement<HTMLButtonElement>('#add-item-back', 'Add-item back button');
+  const addItemMobileForm = requireElement<HTMLFormElement>('#add-item-mobile-form', 'Add-item mobile form');
+  const addItemMobileInput = requireElement<HTMLInputElement>('#add-item-mobile-input', 'Add-item mobile title input');
+  const addItemMobileArtistInput = requireElement<HTMLInputElement>('#add-item-mobile-artist-input', 'Add-item mobile artist input');
+  const addItemMobileFeedback = requireElement<HTMLElement>('#add-item-mobile-feedback', 'Add-item mobile feedback');
+  const addItemDialog = requireElement<HTMLDialogElement>('#add-item-dialog', 'Add-item dialog');
+  const addItemDialogForm = requireElement<HTMLFormElement>('#add-item-dialog-form', 'Add-item dialog form');
+  const addItemDialogInput = requireElement<HTMLInputElement>('#add-item-dialog-input', 'Add-item dialog title input');
+  const addItemDialogArtistInput = requireElement<HTMLInputElement>('#add-item-dialog-artist-input', 'Add-item dialog artist input');
+  const addItemDialogFeedback = requireElement<HTMLElement>('#add-item-dialog-feedback', 'Add-item dialog feedback');
+  const addItemDialogCancel = requireElement<HTMLButtonElement>('#add-item-dialog-cancel', 'Add-item dialog cancel button');
   const closeTriggers = Array.from(
     document.querySelectorAll<HTMLElement>('[data-close-search]')
   );
-
-  if (
-    !shell ||
-    !form ||
-    !input ||
-    !clearButton ||
-    !panel ||
-    !mobileStepPanel ||
-    !list ||
-    !status ||
-    !addItemAction ||
-    !addItemBackButton ||
-    !addItemMobileForm ||
-    !addItemMobileInput ||
-    !addItemMobileArtistInput ||
-    !addItemMobileFeedback ||
-    !addItemDialog ||
-    !addItemDialogForm ||
-    !addItemDialogInput ||
-    !addItemDialogArtistInput ||
-    !addItemDialogFeedback ||
-    !addItemDialogCancel
-  ) {
-    throw new Error('Vereiste elementen zijn niet gevonden in de DOM.');
-  }
 
   return {
     shell,
