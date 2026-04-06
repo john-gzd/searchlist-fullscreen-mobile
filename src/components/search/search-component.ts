@@ -111,6 +111,12 @@ export const initializeSearchComponent = ({
   });
 
   elements.input.addEventListener('keydown', (keyboardEvent) => {
+    if (keyboardEvent.altKey && keyboardEvent.key.toLowerCase() === 'n') {
+      keyboardEvent.preventDefault();
+      elements.addItemAction.click();
+      return;
+    }
+
     switch (keyboardEvent.key) {
       case 'ArrowDown':
         keyboardEvent.preventDefault();
