@@ -19,6 +19,31 @@ interface CloseResultsOptions {
   restoreFocus?: boolean;
 }
 
+const getFocusableElements = (container: HTMLElement): HTMLElement[] => {
+  const candidateSelector = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ].join(', ');
+
+  return Array.from(container.querySelectorAll<HTMLElement>(candidateSelector)).filter(
+    (element) => {
+      if (element.hasAttribute('hidden')) {
+        return false;
+      }
+
+      if (element.getAttribute('aria-hidden') === 'true') {
+        return false;
+      }
+
+      return element.getClientRects().length > 0;
+    }
+  );
+};
+
 const getOptionFromEvent = (event: Event): HTMLElement | null =>
   (event.target as HTMLElement).closest<HTMLElement>('[data-index]');
 
@@ -234,6 +259,46 @@ export const initializeSearchComponent = ({
     }
 
     updateOpenState(true);
+  });
+
+  elements.shell.addEventListener('keydown', (keyboardEvent) => {
+    const shouldTrapFocus =
+      keyboardEvent.key === 'Tab' &&
+      state.isOpen &&
+      elements.mobileMediaQuery.matches;
+
+    if (!shouldTrapFocus) {
+      return;
+    }
+
+    const focusableElements = getFocusableElements(elements.shell);
+
+    if (focusableElements.length === 0) {
+      return;
+    }
+
+    const firstFocusableElement = focusableElements[0];
+    const lastFocusableElement = focusableElements[focusableElements.length - 1];
+
+    if (!firstFocusableElement || !lastFocusableElement) {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+
+    if (keyboardEvent.shiftKey) {
+      if (activeElement === firstFocusableElement || !elements.shell.contains(activeElement)) {
+        keyboardEvent.preventDefault();
+        lastFocusableElement.focus();
+      }
+
+      return;
+    }
+
+    if (activeElement === lastFocusableElement || !elements.shell.contains(activeElement)) {
+      keyboardEvent.preventDefault();
+      firstFocusableElement.focus();
+    }
   });
 
   setupAddItemFlow({

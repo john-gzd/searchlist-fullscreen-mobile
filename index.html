@@ -22,7 +22,7 @@
             <div class="search__field-group">
               <label class="search__label" for="search-input">Zoeken</label>
               <p id="search-instructions" class="visually-hidden">
-                Gebruik pijl omhoog en omlaag om door de resultaten te gaan en druk op Enter om een resultaat te kiezen. Gebruik Alt+N om direct naar item toevoegen te gaan.
+                Gebruik pijl omhoog en omlaag om door de resultaten te gaan en druk op Enter om een resultaat te kiezen. Gebruik Alt+N om direct naar item toevoegen te gaan. Druk op Escape om de add-item stap of zoekoverlay te sluiten.
               </p>
 
               <div class="search__controls">
@@ -67,8 +67,14 @@
             </div>
           </form>
 
-          <div id="results-panel" class="search__panel" hidden>
-            <p id="results-status" class="visually-hidden" aria-live="polite"></p>
+          <div
+            id="results-panel"
+            class="search__panel"
+            role="region"
+            aria-label="Zoekresultaten"
+            hidden
+          >
+            <p id="results-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></p>
             <div class="search__list-scroller">
               <ul
                 id="results"
@@ -93,7 +99,10 @@
           <section
             id="add-item-mobile-panel"
             class="search__panel search__panel--step"
+            role="dialog"
+            aria-modal="true"
             aria-labelledby="add-item-mobile-title"
+            tabindex="-1"
             hidden
           >
             <div class="search__step-header">
@@ -134,7 +143,9 @@
               <p
                 id="add-item-mobile-feedback"
                 class="search__form-feedback visually-hidden"
-                aria-live="polite"
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
               ></p>
 
               <div class="search__step-actions">
@@ -177,7 +188,9 @@
         <p
           id="add-item-dialog-feedback"
           class="search__form-feedback visually-hidden"
-          aria-live="polite"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
         ></p>
 
         <div class="search__dialog-actions">

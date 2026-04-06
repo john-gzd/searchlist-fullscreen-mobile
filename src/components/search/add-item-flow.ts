@@ -32,6 +32,36 @@ interface AddItemFormControls {
 
 const invalidInputClassName = 'search__input--invalid';
 
+const associateFeedbackWithInput = (
+  input: HTMLInputElement,
+  feedbackElementId: string
+): void => {
+  const describedBy = input.getAttribute('aria-describedby') ?? '';
+  const describedByIds = describedBy
+    .split(/\s+/)
+    .filter((id) => id.length > 0 && id !== feedbackElementId);
+
+  describedByIds.push(feedbackElementId);
+  input.setAttribute('aria-describedby', describedByIds.join(' '));
+};
+
+const removeFeedbackAssociationFromInput = (
+  input: HTMLInputElement,
+  feedbackElementId: string
+): void => {
+  const describedBy = input.getAttribute('aria-describedby') ?? '';
+  const describedByIds = describedBy
+    .split(/\s+/)
+    .filter((id) => id.length > 0 && id !== feedbackElementId);
+
+  if (describedByIds.length === 0) {
+    input.removeAttribute('aria-describedby');
+    return;
+  }
+
+  input.setAttribute('aria-describedby', describedByIds.join(' '));
+};
+
 const showFeedback = (
   target: HTMLElement,
   message: string,
@@ -43,6 +73,7 @@ const showFeedback = (
   inputs.forEach((input) => {
     input.classList.add(invalidInputClassName);
     input.setAttribute('aria-invalid', 'true');
+    associateFeedbackWithInput(input, target.id);
   });
 };
 
@@ -56,6 +87,7 @@ const clearFeedback = (
   inputs.forEach((input) => {
     input.classList.remove(invalidInputClassName);
     input.removeAttribute('aria-invalid');
+    removeFeedbackAssociationFromInput(input, target.id);
   });
 };
 
@@ -171,6 +203,11 @@ export const setupAddItemFlow = ({
     }
   };
 
+  const closeAddItemFlowFromKeyboard = (): void => {
+    closeResults();
+    focusSearchInput();
+  };
+
   elements.addItemAction.addEventListener('click', () => {
     openAddItemStep();
   });
@@ -214,6 +251,24 @@ export const setupAddItemFlow = ({
 
   elements.addItemDialog.addEventListener('close', () => {
     focusSearchInput();
+  });
+
+  elements.mobileStepPanel.addEventListener('keydown', (keyboardEvent) => {
+    if (keyboardEvent.key !== 'Escape') {
+      return;
+    }
+
+    keyboardEvent.preventDefault();
+    closeAddItemFlowFromKeyboard();
+  });
+
+  elements.addItemDialog.addEventListener('keydown', (keyboardEvent) => {
+    if (keyboardEvent.key !== 'Escape') {
+      return;
+    }
+
+    keyboardEvent.preventDefault();
+    elements.addItemDialog.close();
   });
 
   const currentState = getState();
