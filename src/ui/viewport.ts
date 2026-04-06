@@ -1,9 +1,16 @@
 export const syncViewportHeight = (): void => {
-  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  const visualViewport = window.visualViewport;
+  const viewportHeight = visualViewport?.height ?? window.innerHeight;
+  const viewportOffsetTop = visualViewport?.offsetTop ?? 0;
 
   document.documentElement.style.setProperty(
     '--visual-viewport-height',
     `${Math.round(viewportHeight)}px`
+  );
+
+  document.documentElement.style.setProperty(
+    '--visual-viewport-offset-top',
+    `${Math.round(viewportOffsetTop)}px`
   );
 };
 
