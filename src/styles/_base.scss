@@ -1,0 +1,35 @@
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    margin: 0;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body.has-search-overlay {
+    overflow: hidden;
+  }
+
+  .page {
+    min-height: 100svh;
+    min-height: var(--visual-viewport-height);
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+  }
+
+  @media (max-width: 767px) {
+    .page {
+      padding: 1rem;
+    }
+  }
+}

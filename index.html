@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top 2000 Zoekdemo</title>
+  </head>
+  <body>
+    <main class="page">
+      <section class="search" aria-labelledby="search-title">
+        <div id="search-shell" class="search__shell">
+          <div class="search__overlay" data-close-search></div>
+
+          <form id="search-form" class="search__form" role="search" novalidate>
+            <div class="search__intro">
+              <h1 id="search-title">Zoek een nummer</h1>
+              <p id="search-description">
+                Zoek direct op titel of artiest en filter de resultaten tijdens het typen.
+              </p>
+            </div>
+
+            <div class="search__field-group">
+              <label class="search__label" for="search-input">Zoeken</label>
+              <p id="search-instructions" class="visually-hidden">
+                Gebruik pijl omhoog en omlaag om door de resultaten te gaan en druk op Enter om een resultaat te kiezen.
+              </p>
+
+              <div class="search__controls">
+                <input
+                  id="search-input"
+                  class="search__input"
+                  type="search"
+                  placeholder="Bijvoorbeeld: Queen, Bohemian Rhapsody, Coldplay..."
+                  autocomplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="results"
+                  aria-haspopup="listbox"
+                  aria-describedby="search-description search-instructions results-status"
+                />
+
+                <button
+                  id="search-clear"
+                  type="button"
+                  class="search__clear"
+                  aria-label="Gekozen nummer wissen"
+                  hidden
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path
+                      d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 0 0-1.4 1.4l4.9 4.9-4.9 4.9a1 1 0 0 0 1.4 1.4l4.9-4.9 4.9 4.9a1 1 0 0 0 1.4-1.4l-4.9-4.9 4.9-4.9a1 1 0 0 0 0-1.4"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
+
+                <button
+                  type="button"
+                  class="search__close"
+                  data-close-search
+                  aria-label="Zoekoverlay sluiten"
+                >
+                  Sluiten
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div id="results-panel" class="search__panel" hidden>
+            <p id="results-status" class="visually-hidden" aria-live="polite"></p>
+            <div class="search__list-scroller">
+              <ul
+                id="results"
+                class="search__list"
+                role="listbox"
+                aria-label="Gefilterde resultaten"
+              ></ul>
+            </div>
+
+            <div class="search__panel-footer">
+              <button
+                id="add-item-action"
+                type="button"
+                class="search__action"
+              >
+                Item toevoegen
+              </button>
+            </div>
+          </div>
+
+          <section
+            id="add-item-mobile-panel"
+            class="search__panel search__panel--step"
+            aria-labelledby="add-item-mobile-title"
+            hidden
+          >
+            <div class="search__step-header">
+              <button
+                id="add-item-back"
+                type="button"
+                class="search__back"
+                aria-label="Terug naar zoekresultaten"
+              >
+                Vorige
+              </button>
+              <h2 id="add-item-mobile-title" class="search__step-title">Item toevoegen</h2>
+            </div>
+
+            <form id="add-item-mobile-form" class="search__step-form" novalidate>
+              <label class="search__label" for="add-item-mobile-input">Titel</label>
+              <input
+                id="add-item-mobile-input"
+                class="search__input"
+                name="title"
+                type="text"
+                required
+                placeholder="Bijvoorbeeld: Fix You"
+                autocomplete="off"
+              />
+
+              <label class="search__label" for="add-item-mobile-artist-input">Artiest</label>
+              <input
+                id="add-item-mobile-artist-input"
+                class="search__input"
+                name="artist"
+                type="text"
+                required
+                placeholder="Bijvoorbeeld: Coldplay"
+                autocomplete="off"
+              />
+
+              <p
+                id="add-item-mobile-feedback"
+                class="search__form-feedback visually-hidden"
+                aria-live="polite"
+              ></p>
+
+              <div class="search__step-actions">
+                <button type="submit" class="search__action">Toevoegen</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="add-item-dialog" class="search__dialog" aria-labelledby="add-item-dialog-title">
+      <form id="add-item-dialog-form" class="search__dialog-form" method="dialog" novalidate>
+        <div class="search__dialog-header">
+          <h2 id="add-item-dialog-title" class="search__dialog-title">Item toevoegen</h2>
+        </div>
+
+        <label class="search__label" for="add-item-dialog-input">Titel</label>
+        <input
+          id="add-item-dialog-input"
+          class="search__input"
+          name="title"
+          type="text"
+          required
+          placeholder="Bijvoorbeeld: Fix You"
+          autocomplete="off"
+        />
+
+        <label class="search__label" for="add-item-dialog-artist-input">Artiest</label>
+        <input
+          id="add-item-dialog-artist-input"
+          class="search__input"
+          name="artist"
+          type="text"
+          required
+          placeholder="Bijvoorbeeld: Coldplay"
+          autocomplete="off"
+        />
+
+        <p
+          id="add-item-dialog-feedback"
+          class="search__form-feedback visually-hidden"
+          aria-live="polite"
+        ></p>
+
+        <div class="search__dialog-actions">
+          <button type="button" id="add-item-dialog-cancel" class="search__secondary-action">
+            Annuleren
+          </button>
+          <button type="submit" class="search__action">Toevoegen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="/src/index.ts"></script>
+  </body>
+</html>

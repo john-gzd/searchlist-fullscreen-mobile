@@ -1,0 +1,17 @@
+@layer tokens {
+  :root {
+    color-scheme: light;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #1f2937;
+    background-color: #f3f4f6;
+    --visual-viewport-height: 100dvh;
+    --search-radius: 0.75rem;
+    --search-border-color: #d1d5db;
+    --search-border-subtle: #e5e7eb;
+    --search-panel-background: #ffffff;
+    --search-overlay-background: rgba(243, 244, 246, 0.96);
+    --search-focus-color: #2563eb;
+    --search-active-background: #eff6ff;
+    --search-muted-color: #6b7280;
+  }
+}
