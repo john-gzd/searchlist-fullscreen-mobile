@@ -44,6 +44,21 @@ export const createSearchComponentView = ({
   elements,
   state
 }: SearchComponentViewOptions): SearchComponentView => {
+  const syncMobileModalSemantics = (): void => {
+    const isMobileModal = state.isOpen && elements.mobileMediaQuery.matches;
+
+    if (isMobileModal) {
+      elements.shell.setAttribute('role', 'dialog');
+      elements.shell.setAttribute('aria-modal', 'true');
+      elements.shell.setAttribute('aria-labelledby', 'search-title');
+      return;
+    }
+
+    elements.shell.removeAttribute('role');
+    elements.shell.removeAttribute('aria-modal');
+    elements.shell.removeAttribute('aria-labelledby');
+  };
+
   const syncPanels = (): void => {
     const isMobile = elements.mobileMediaQuery.matches;
     const showAddItemStep = state.isOpen && isMobile && state.currentView === 'add-item';
@@ -61,6 +76,7 @@ export const createSearchComponentView = ({
     elements.shell.classList.toggle(searchStateClasses.mobileOpen, isMobileOpen);
     document.body.classList.toggle(searchStateClasses.bodyLocked, isMobileOpen);
     elements.input.setAttribute('aria-expanded', String(state.isOpen));
+    syncMobileModalSemantics();
 
     syncPanels();
   };

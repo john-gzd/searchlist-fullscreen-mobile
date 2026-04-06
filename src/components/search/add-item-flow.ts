@@ -91,6 +91,12 @@ const clearFeedback = (
   });
 };
 
+const clearCustomValidity = (...inputs: HTMLInputElement[]): void => {
+  inputs.forEach((input) => {
+    input.setCustomValidity('');
+  });
+};
+
 export const setupAddItemFlow = ({
   elements,
   getState,
@@ -118,7 +124,25 @@ export const setupAddItemFlow = ({
   };
 
   const clearFormFeedback = ({ feedback, titleInput, artistInput }: AddItemFormControls): void => {
+    clearCustomValidity(titleInput, artistInput);
     clearFeedback(feedback, titleInput, artistInput);
+  };
+
+  const bindValidationReset = ({
+    titleInput,
+    artistInput,
+    feedback
+  }: AddItemFormControls): void => {
+    const handleInput = (): void => {
+      clearCustomValidity(titleInput, artistInput);
+
+      if (!feedback.classList.contains('visually-hidden')) {
+        clearFeedback(feedback, titleInput, artistInput);
+      }
+    };
+
+    titleInput.addEventListener('input', handleInput);
+    artistInput.addEventListener('input', handleInput);
   };
 
   const resetAddItemForms = (): void => {
@@ -130,38 +154,39 @@ export const setupAddItemFlow = ({
   };
 
   const commitNewItem = (
-    rawTitle: string,
-    rawArtist: string,
-    feedbackTarget: HTMLElement,
-    titleInput: HTMLInputElement,
-    artistInput: HTMLInputElement
+    { form, titleInput, artistInput, feedback }: AddItemFormControls
   ): boolean => {
+    clearCustomValidity(titleInput, artistInput);
+    clearFeedback(feedback, titleInput, artistInput);
+
+    if (!form.reportValidity()) {
+      return false;
+    }
+
+    const rawTitle = titleInput.value;
+    const rawArtist = artistInput.value;
     const nextItem = normalizeSearchItem({
       title: rawTitle,
       artist: rawArtist
     });
 
-    if (!nextItem.title || !nextItem.artist) {
-      showFeedback(
-        feedbackTarget,
-        'Vul zowel een titel als artiest in.',
-        titleInput,
-        artistInput
-      );
-      return false;
-    }
-
     if (hasItemWithArtist(getItems(), nextItem)) {
+      const duplicateMessage = 'Dit nummer met deze artiest staat al in de lijst.';
+
+      titleInput.setCustomValidity(duplicateMessage);
+      artistInput.setCustomValidity(duplicateMessage);
       showFeedback(
-        feedbackTarget,
-        'Dit nummer met deze artiest staat al in de lijst.',
+        feedback,
+        duplicateMessage,
         titleInput,
         artistInput
       );
+
+      form.reportValidity();
       return false;
     }
 
-    clearFeedback(feedbackTarget, titleInput, artistInput);
+    clearFeedback(feedback, titleInput, artistInput);
 
     setItems([...getItems(), nextItem]);
     elements.input.value = nextItem.title;
@@ -219,25 +244,13 @@ export const setupAddItemFlow = ({
   elements.addItemMobileForm.addEventListener('submit', (submitEvent) => {
     submitEvent.preventDefault();
 
-    commitNewItem(
-      mobileFormControls.titleInput.value,
-      mobileFormControls.artistInput.value,
-      mobileFormControls.feedback,
-      mobileFormControls.titleInput,
-      mobileFormControls.artistInput
-    );
+    commitNewItem(mobileFormControls);
   });
 
   elements.addItemDialogForm.addEventListener('submit', (submitEvent) => {
     submitEvent.preventDefault();
 
-    const success = commitNewItem(
-      dialogFormControls.titleInput.value,
-      dialogFormControls.artistInput.value,
-      dialogFormControls.feedback,
-      dialogFormControls.titleInput,
-      dialogFormControls.artistInput
-    );
+    const success = commitNewItem(dialogFormControls);
 
     if (success) {
       elements.addItemDialog.close();
@@ -270,6 +283,9 @@ export const setupAddItemFlow = ({
     keyboardEvent.preventDefault();
     elements.addItemDialog.close();
   });
+
+  bindValidationReset(mobileFormControls);
+  bindValidationReset(dialogFormControls);
 
   const currentState = getState();
   if (!currentState.isOpen) {
