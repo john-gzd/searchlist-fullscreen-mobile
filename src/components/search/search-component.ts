@@ -1,110 +1,53 @@
 import {
   clampActiveIndex,
-  filterItems,
-  formatSearchItemLabel,
-  getNextActiveIndex,
-  getResultsStatusMessage
+  getNextActiveIndex
 } from '../../business/search-service';
 import type { SearchItem } from '../../data/search-item';
+import type { SearchElements } from '../../ui/search-dom';
 import { setupAddItemFlow } from './add-item-flow';
 import {
-  getOptionElements,
-  searchStateClasses,
-  type SearchElements
-} from '../../ui/search-dom';
+  createInitialSearchState,
+  createSearchComponentView
+} from './search-component-view';
 
 interface SearchComponentOptions {
   elements: SearchElements;
   items: ReadonlyArray<SearchItem>;
 }
 
-interface SearchComponentState {
-  items: SearchItem[];
-  filteredItems: SearchItem[];
-  activeIndex: number;
-  isOpen: boolean;
-  currentView: 'results' | 'add-item';
-}
-
 interface CloseResultsOptions {
   restoreFocus?: boolean;
 }
 
-const getOptionId = (index: number): string => `result-option-${index}`;
+const getOptionFromEvent = (event: Event): HTMLElement | null =>
+  (event.target as HTMLElement).closest<HTMLElement>('[data-index]');
 
 export const initializeSearchComponent = ({
   elements,
   items
 }: SearchComponentOptions): void => {
-  const state: SearchComponentState = {
-    items: [...items],
-    filteredItems: [...items],
-    activeIndex: -1,
-    isOpen: false,
-    currentView: 'results'
-  };
+  const state = createInitialSearchState(items);
+  const searchView = createSearchComponentView({ elements, state });
 
-  const syncPanels = (): void => {
-    const isMobile = elements.mobileMediaQuery.matches;
-    const showAddStep = state.isOpen && isMobile && state.currentView === 'add-item';
-    const showResults = state.isOpen && (!isMobile || state.currentView === 'results');
+  const updateOpenState = (isOpen: boolean): void => {
+    state.isOpen = isOpen;
 
-    elements.shell.classList.toggle(searchStateClasses.mobileStepOpen, showAddStep);
-    elements.panel.hidden = !showResults;
-    elements.mobileStepPanel.hidden = !showAddStep;
-  };
-
-  const updateActiveDescendant = (): void => {
-    const options = getOptionElements(elements.list);
-
-    options.forEach((option, index) => {
-      const isActive = index === state.activeIndex;
-
-      option.setAttribute('aria-selected', String(isActive));
-      option.classList.toggle(searchStateClasses.activeOption, isActive);
-
-      if (isActive) {
-        elements.input.setAttribute('aria-activedescendant', option.id);
-        option.scrollIntoView({ block: 'nearest' });
-      }
-    });
-
-    if (state.activeIndex < 0) {
-      elements.input.removeAttribute('aria-activedescendant');
-    }
-  };
-
-  const updateOpenState = (nextOpen: boolean): void => {
-    state.isOpen = nextOpen;
-
-    if (!nextOpen) {
+    if (!isOpen) {
       state.activeIndex = -1;
       state.currentView = 'results';
-      updateActiveDescendant();
+      searchView.updateActiveDescendant();
     }
 
-    const isMobileOpen = nextOpen && elements.mobileMediaQuery.matches;
-
-    elements.shell.classList.toggle(searchStateClasses.open, nextOpen);
-    elements.shell.classList.toggle(searchStateClasses.mobileOpen, isMobileOpen);
-    document.body.classList.toggle(searchStateClasses.bodyLocked, isMobileOpen);
-    elements.input.setAttribute('aria-expanded', String(nextOpen));
-    syncPanels();
+    searchView.syncOpenState();
   };
 
   const setActiveIndex = (nextIndex: number): void => {
     state.activeIndex = clampActiveIndex(nextIndex, state.filteredItems.length);
-    updateActiveDescendant();
+    searchView.updateActiveDescendant();
   };
 
   const openResults = (): void => {
     updateOpenState(true);
-  };
-
-  const syncClearButtonState = (): void => {
-    const hasValue = elements.input.value.trim().length > 0;
-    elements.clearButton.hidden = !hasValue;
-    elements.clearButton.disabled = !hasValue;
   };
 
   const closeResults = ({ restoreFocus = false }: CloseResultsOptions = {}): void => {
@@ -116,60 +59,8 @@ export const initializeSearchComponent = ({
   };
 
   const renderList = (query = elements.input.value): void => {
-    syncClearButtonState();
-    state.filteredItems = filterItems(state.items, query);
-    elements.list.innerHTML = '';
-
-    if (state.filteredItems.length === 0) {
-      const emptyState = document.createElement('li');
-      emptyState.className = 'search__empty';
-      emptyState.setAttribute('role', 'presentation');
-      emptyState.textContent = 'Geen resultaten gevonden.';
-
-      elements.list.appendChild(emptyState);
-      elements.status.textContent = getResultsStatusMessage(0);
-      state.activeIndex = -1;
-      updateActiveDescendant();
-      return;
-    }
-
-    state.filteredItems.forEach((item, index) => {
-      const listItem = document.createElement('li');
-      const title = document.createElement('span');
-      const artist = document.createElement('span');
-
-      listItem.id = getOptionId(index);
-      listItem.className = 'search__option';
-      listItem.setAttribute('role', 'option');
-      listItem.setAttribute('aria-label', formatSearchItemLabel(item));
-      listItem.setAttribute('aria-selected', 'false');
-      listItem.dataset.index = String(index);
-
-      title.className = 'search__option-title';
-      title.textContent = item.title;
-
-      artist.className = 'search__option-artist';
-      artist.textContent = item.artist;
-
-      listItem.append(title, artist);
-
-      elements.list.appendChild(listItem);
-    });
-
-    elements.status.textContent = getResultsStatusMessage(
-      state.filteredItems.length
-    );
-
-    state.activeIndex = clampActiveIndex(
-      state.activeIndex,
-      state.filteredItems.length
-    );
-
-    updateActiveDescendant();
+    searchView.renderList(query);
   };
-
-  const getOptionFromEvent = (event: Event): HTMLElement | null =>
-    (event.target as HTMLElement).closest<HTMLElement>('[data-index]');
 
   const selectItem = (index: number): void => {
     const selectedItem = state.filteredItems[index];
@@ -194,22 +85,32 @@ export const initializeSearchComponent = ({
       state.filteredItems.length
     );
 
-    updateActiveDescendant();
+    searchView.updateActiveDescendant();
   };
 
-  const handleInputFocus = (): void => {
+  elements.form.addEventListener('submit', (submitEvent) => {
+    submitEvent.preventDefault();
+
+    if (state.activeIndex >= 0) {
+      selectItem(state.activeIndex);
+      return;
+    }
+
+    openResults();
+  });
+
+  elements.input.addEventListener('focus', () => {
     renderList();
     openResults();
-  };
+  });
 
-  const handleInputValueChange = (inputEvent: Event): void => {
+  elements.input.addEventListener('input', (inputEvent) => {
     const inputElement = inputEvent.target as HTMLInputElement;
-
     renderList(inputElement.value);
     openResults();
-  };
+  });
 
-  const handleInputKeydown = (keyboardEvent: KeyboardEvent): void => {
+  elements.input.addEventListener('keydown', (keyboardEvent) => {
     switch (keyboardEvent.key) {
       case 'ArrowDown':
         keyboardEvent.preventDefault();
@@ -234,9 +135,21 @@ export const initializeSearchComponent = ({
       default:
         break;
     }
-  };
+  });
 
-  const handleListClick = (mouseEvent: MouseEvent): void => {
+  elements.clearButton.addEventListener('click', () => {
+    if (!elements.input.value) {
+      return;
+    }
+
+    elements.input.value = '';
+    state.activeIndex = -1;
+    renderList('');
+    openResults();
+    elements.input.focus();
+  });
+
+  elements.list.addEventListener('click', (mouseEvent) => {
     const optionElement = getOptionFromEvent(mouseEvent);
 
     if (!optionElement) {
@@ -246,9 +159,21 @@ export const initializeSearchComponent = ({
     const optionIndex = Number(optionElement.dataset.index);
     setActiveIndex(optionIndex);
     selectItem(optionIndex);
-  };
+  });
 
-  const handleListMouseOver = (mouseEvent: MouseEvent): void => {
+  elements.list.addEventListener('mousedown', (mouseEvent) => {
+    const optionElement = getOptionFromEvent(mouseEvent);
+
+    if (!optionElement) {
+      return;
+    }
+
+    // Keep focus on the input so the focusout handler does not close the panel before click.
+    mouseEvent.preventDefault();
+    setActiveIndex(Number(optionElement.dataset.index));
+  });
+
+  elements.list.addEventListener('mouseover', (mouseEvent) => {
     const optionElement = getOptionFromEvent(mouseEvent);
 
     if (!optionElement) {
@@ -256,9 +181,16 @@ export const initializeSearchComponent = ({
     }
 
     setActiveIndex(Number(optionElement.dataset.index));
-  };
+  });
 
-  const handleShellFocusOut = (focusEvent: FocusEvent): void => {
+  elements.closeTriggers.forEach((closeTriggerElement) => {
+    closeTriggerElement.addEventListener('click', () => {
+      closeResults();
+      elements.input.blur();
+    });
+  });
+
+  elements.shell.addEventListener('focusout', (focusEvent) => {
     const nextFocusedElement = focusEvent.relatedTarget as Node | null;
 
     if (nextFocusedElement && elements.shell.contains(nextFocusedElement)) {
@@ -274,9 +206,9 @@ export const initializeSearchComponent = ({
 
       closeResults();
     }, 0);
-  };
+  });
 
-  const handleDocumentClick = (mouseEvent: MouseEvent): void => {
+  document.addEventListener('click', (mouseEvent) => {
     const clickTarget = mouseEvent.target as Node;
 
     if (!state.isOpen || elements.shell.contains(clickTarget)) {
@@ -284,57 +216,19 @@ export const initializeSearchComponent = ({
     }
 
     closeResults();
-  };
+  });
 
-  const bindInputEvents = (): void => {
-    elements.input.addEventListener('focus', handleInputFocus);
-    elements.input.addEventListener('input', handleInputValueChange);
-    elements.input.addEventListener('keydown', handleInputKeydown);
-  };
-
-  const bindListEvents = (): void => {
-    elements.list.addEventListener('click', handleListClick);
-    elements.list.addEventListener('mouseover', handleListMouseOver);
-  };
-
-  const bindCloseEvents = (): void => {
-    elements.closeTriggers.forEach((triggerElement) => {
-      triggerElement.addEventListener('click', () => {
-        closeResults();
-        elements.input.blur();
-      });
-    });
-
-    elements.shell.addEventListener('focusout', handleShellFocusOut);
-    document.addEventListener('click', handleDocumentClick);
-  };
-
-  elements.form.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    if (state.activeIndex >= 0) {
-      selectItem(state.activeIndex);
+  elements.mobileMediaQuery.addEventListener('change', () => {
+    if (!state.isOpen) {
       return;
     }
 
-    openResults();
-  });
-
-  bindInputEvents();
-
-  elements.clearButton.addEventListener('click', () => {
-    if (!elements.input.value) {
-      return;
+    if (!elements.mobileMediaQuery.matches) {
+      state.currentView = 'results';
     }
 
-    elements.input.value = '';
-    state.activeIndex = -1;
-    renderList('');
-    openResults();
-    elements.input.focus();
+    updateOpenState(true);
   });
-
-  bindListEvents();
 
   setupAddItemFlow({
     elements,
@@ -344,7 +238,7 @@ export const initializeSearchComponent = ({
     setCurrentView: (view) => {
       state.currentView = view;
     },
-    syncPanels,
+    syncPanels: searchView.syncPanels,
     openResults,
     closeResults,
     focusSearchInput: () => {
@@ -357,19 +251,7 @@ export const initializeSearchComponent = ({
     renderList
   });
 
-  syncClearButtonState();
-
-  bindCloseEvents();
-
-  elements.mobileMediaQuery.addEventListener('change', () => {
-    if (state.isOpen) {
-      if (!elements.mobileMediaQuery.matches) {
-        state.currentView = 'results';
-      }
-
-      updateOpenState(true);
-    }
-  });
+  searchView.syncClearButtonState();
 
   renderList();
 };

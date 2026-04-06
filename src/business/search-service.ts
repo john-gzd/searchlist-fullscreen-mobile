@@ -22,17 +22,6 @@ export const normalizeSearchItem = (item: SearchItem): SearchItem => ({
   artist: normalizeItemName(item.artist)
 });
 
-export const hasItem = (
-  items: ReadonlyArray<SearchItem>,
-  candidate: string
-): boolean => {
-  const normalizedCandidate = normalizeItemName(candidate).toLowerCase();
-
-  return items.some(
-    ({ title }) => normalizeItemName(title).toLowerCase() === normalizedCandidate
-  );
-};
-
 export const hasItemWithArtist = (
   items: ReadonlyArray<SearchItem>,
   candidate: SearchItem

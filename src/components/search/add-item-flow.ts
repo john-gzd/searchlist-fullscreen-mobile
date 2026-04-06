@@ -105,8 +105,8 @@ export const setupAddItemFlow = ({
     artistInput: HTMLInputElement
   ): boolean => {
     const nextItem = normalizeSearchItem({
-      title: normalizeItemName(rawTitle),
-      artist: normalizeItemName(rawArtist)
+      title: rawTitle,
+      artist: rawArtist
     });
 
     if (!nextItem.title || !nextItem.artist) {
